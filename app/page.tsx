@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+
 interface SessionLog {
   id: string;
   duration: number;
@@ -21,12 +22,12 @@ const ANIMATION_FRAMES = {
 };
 
 export default function Home() {
-  const [focusConfig, setFocusConfig] = useState(1500);
-  const [breakConfig, setBreakConfig] = useState(300);
+  const [focusConfig, setFocusConfig] = useState(1500); // 25 mins
+  const [breakConfig, setBreakConfig] = useState(300);  // 5 mins
+
   const [currentMode, setCurrentMode] = useState<"focus" | "break">("focus");
   const [secondsLeft, setSecondsLeft] = useState(1500);
   const [isActive, setIsActive] = useState(false);
-
   const [history, setHistory] = useState<SessionLog[]>([]);
 
   const getDateKey = () => {
@@ -44,7 +45,7 @@ export default function Home() {
         setHistory(filtered);
         localStorage.setItem("ribbit_focus_history", JSON.stringify(filtered));
       } catch (e) {
-        console.error("Error reading history", e);
+        console.error("Error hydration history failed", e);
       }
     }
   }, []);
@@ -65,32 +66,6 @@ export default function Home() {
     return () => clearInterval(intervalId);
   }, [isActive, secondsLeft]);
 
-  const play8BitBeep = () => {
-    if (typeof window === "undefined") return;
-    try {
-      const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
-      const ctx = new AudioContext();
-
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-
-      osc.type = "square";
-      osc.frequency.setValueAtTime(587.33, ctx.currentTime);
-      osc.frequency.setValueAtTime(880.00, ctx.currentTime + 0.1);
-
-      gain.gain.setValueAtTime(0.1, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
-
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-
-      osc.start();
-      osc.stop(ctx.currentTime + 0.3);
-    } catch (e) {
-      console.warn("Audio context blocked or unsupported", e);
-    }
-  };
-
   const switchCycles = () => {
     if (currentMode === "focus") {
       setCurrentMode("break");
@@ -99,7 +74,32 @@ export default function Home() {
       setCurrentMode("focus");
       setSecondsLeft(focusConfig);
     }
-    setIsActive(true);
+    setIsActive(true); 
+  };
+
+  const play8BitBeep = () => {
+    if (typeof window === "undefined") return;
+    try {
+      const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+      const ctx = new AudioContext();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      
+      osc.type = "square";
+      osc.frequency.setValueAtTime(587.33, ctx.currentTime); 
+      osc.frequency.setValueAtTime(880.00, ctx.currentTime + 0.1); 
+      
+      gain.gain.setValueAtTime(0.1, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+      
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      
+      osc.start();
+      osc.stop(ctx.currentTime + 0.3);
+    } catch (e) {
+      console.warn("Audio Context blocked", e);
+    }
   };
 
   const logSessionComplete = () => {
@@ -162,7 +162,7 @@ export default function Home() {
           </div>
         </div>
 
-        <div className={`w-full h-44 border-4 border-black flex items-center justify-center overflow-hidden transition-colors ${currentMode === 'break' && isActive ? 'bg-[#FAFAFA]' : 'bg-white'}`}>
+        <div className="w-full h-44 border-4 border-black flex items-center justify-center bg-white relative overflow-hidden">
           <pre className="font-mono text-[11px] sm:text-xs leading-none tracking-tight font-black text-black select-none text-left whitespace-pre">
             {getAnimationFrame()}
           </pre>
